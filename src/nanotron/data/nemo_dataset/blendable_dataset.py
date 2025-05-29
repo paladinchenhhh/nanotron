@@ -70,29 +70,30 @@ class BlendableDataset(torch.utils.data.Dataset):
         self.dataset_num_samples = np.zeros(num_datasets, dtype=np.int64)
         self.random_seed = seed
 
-        with main_rank_first(parallel_context.world_pg):
-            try:
-                from . import helpers
-            except ImportError:
-                try:
-                    from .dataset_utils import compile_helper
+        # with main_rank_first(parallel_context.world_pg):
+        #     try:
+        #         from . import helpers
+        #     except ImportError:
+        #         try:
+        #             from .dataset_utils import compile_helper
 
-                    compile_helper()
-                    from . import helpers
-                except ImportError:
-                    raise ImportError(
-                        "Could not compile megatron dataset C++ helper functions and therefore cannot import helpers python file."
-                    )
+        #             compile_helper()
+        #             from . import helpers
+        #         except ImportError as e:
+        #             print(f"error {e}")
+        #             raise ImportError(
+        #                 "Could not compile megatron dataset C++ helper functions and therefore cannot import helpers python file."
+        #             )
 
-        helpers.build_blending_indices(
-            self.dataset_index,
-            self.dataset_sample_index,  # sequential for each dataset_source
-            self.dataset_num_samples,
-            weights,
-            num_datasets,
-            self.size,
-            torch.distributed.get_rank() == 0,
-        )
+        # helpers.build_blending_indices(
+        #     self.dataset_index,
+        #     self.dataset_sample_index,  # sequential for each dataset_source
+        #     self.dataset_num_samples,
+        #     weights,
+        #     num_datasets,
+        #     self.size,
+        #     torch.distributed.get_rank() == 0,
+        # )
 
         log_rank(
             "> elapsed time for building blendable dataset indices: " "{:.2f} (sec)".format(time.time() - start_time),

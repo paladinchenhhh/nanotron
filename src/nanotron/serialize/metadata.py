@@ -148,8 +148,29 @@ def save_meta(parallel_context: ParallelContext, root_folder: Path, training_met
     # There are some types that require manual casting in order to work correctly.
     processed_metadata = process_type(dataclasses.asdict(checkpoint_metadata), type_hooks={Version: lambda x: str(x)})
 
+    class CustomEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, DataFolder):
+                return obj.path  # 或其他表示形式
+            return super().default(obj)
+    def convert_non_string_keys(data):
+        if isinstance(data, dict):
+            new_dict = {}
+            for key, value in data.items():
+                # 将非基本类型的键转换为字符串
+                if not isinstance(key, (str, int, float, bool, type(None))):
+                    key = str(key)  # 或者使用 key.to_json_key() 等自定义方法
+                # 递归处理值
+                new_dict[key] = convert_non_string_keys(value)
+            return new_dict
+        elif isinstance(data, list):
+            return [convert_non_string_keys(item) for item in data]
+        else:
+            return data
+            
     with open(root_folder / CHECKPOINT_FILE_NAME, mode="w") as fo:
-        json.dump(processed_metadata, fo, indent=2, sort_keys=True)
+        processed_metadata = convert_non_string_keys(processed_metadata)
+        json.dump(processed_metadata, fo, cls=CustomEncoder, indent=2, sort_keys=True)
 
 
 def load_meta(parallel_context: ParallelContext, root_folder: Path) -> CheckpointMetadata:

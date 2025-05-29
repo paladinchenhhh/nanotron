@@ -1175,6 +1175,8 @@ class DistributedTrainer:
 
     def pre_save_checkpoint(self) -> Path:
         # Check if eval_interval should be updated from file
+        if self.config.lighteval is None:
+            return
         eval_interval_file = self.config.lighteval.eval_interval_file
         if eval_interval_file is not None and Path(eval_interval_file).exists():
             try:
@@ -1250,7 +1252,7 @@ class DistributedTrainer:
         # Update step/samples numbers before we save the config
         self.config.general.step = self.metadata.last_train_step
         self.config.general.consumed_train_samples = self.metadata.consumed_train_samples
-
+        print(f"saving {self.metadata}")
         save(
             model=self.unwrapped_model,
             optimizer=self.optimizer,
